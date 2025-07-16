@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synthetic Fraud Simulator</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .container {
+            padding: 20px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .card-header {
+            background: linear-gradient(45deg, #e17055, #fdcb6e);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 15px 20px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #00b894, #00cec9);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 30px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 184, 148, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(45deg, #d63031, #e84393);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 30px;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(45deg, #74b9ff, #0984e3);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 30px;
+        }
+        
+        .progress {
+            height: 25px;
+            border-radius: 15px;
+            background: rgba(0,0,0,0.1);
+        }
+        
+        .progress-bar {
+            background: linear-gradient(45deg, #00b894, #00cec9);
+            border-radius: 15px;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #00b894;
+            box-shadow: 0 0 0 0.2rem rgba(0, 184, 148, 0.25);
+        }
+        
+        .table {
+            border-radius: 10px;
+            overflow: hidden;
+            background: white;
+        }
+        
+        .table thead th {
+            background: linear-gradient(45deg, #1a1a2e, #16213e);
+            color: white;
+            border: none;
+            padding: 15px;
+        }
+        
+        .fraud-pattern {
+            background: linear-gradient(45deg, #d63031, #e84393);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+        }
+        
+        .normal-transaction {
+            background: linear-gradient(45deg, #00b894, #00cec9);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #00b894;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        #liveIndicator {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        
+        .simulation-stats {
+            transition: all 0.3s ease;
+        }
+        
+        .simulation-running .simulation-stats {
+            border-left: 4px solid #00b894;
+            background: linear-gradient(90deg, rgba(0, 184, 148, 0.1), transparent);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="text-center mb-4">
+                    <h1 class="text-white mb-3">
+                        <i class="fas fa-shield-alt"></i> Synthetic Fraud Simulator
+                    </h1>
+                    <p class="text-light">Advanced adversarial testing platform for fraud detection systems</p>
+                    <div class="mt-3">
+                        <a href="/docs" class="btn btn-outline-light me-2" target="_blank">
+                            <i class="fas fa-book"></i> Technical Documentation
+                        </a>
+                        <a href="https://github.com/your-repo/fraud-simulator" class="btn btn-outline-light" target="_blank">
+                            <i class="fab fa-github"></i> View on GitHub
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Control Panel -->
+            <div class="col-lg-4">
+                <div class="card" id="simulationControls">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-cogs"></i> Simulation Controls</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="simulationForm">
+                            <div class="mb-3">
+                                <label for="duration_hours" class="form-label">Duration (Hours)</label>
+                                <input type="number" class="form-control" id="duration_hours" value="1" min="1" max="24">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="transactions_per_hour" class="form-label">Transactions per Hour</label>
+                                <input type="number" class="form-control" id="transactions_per_hour" value="100" min="10" max="1000">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="fraud_rate" class="form-label">Fraud Rate (%)</label>
+                                <input type="range" class="form-range" id="fraud_rate" min="5" max="50" value="15">
+                                <div class="text-center">
+                                    <span id="fraud_rate_display">15%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Fraud Patterns to Test</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="rapid_fire" id="pattern_rapid_fire" checked>
+                                    <label class="form-check-label" for="pattern_rapid_fire">
+                                        Rapid Fire Attacks
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="geographic_hopping" id="pattern_geographic" checked>
+                                    <label class="form-check-label" for="pattern_geographic">
+                                        Geographic Hopping
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="device_spoofing" id="pattern_device" checked>
+                                    <label class="form-check-label" for="pattern_device">
+                                        Device Spoofing
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="amount_escalation" id="pattern_amount" checked>
+                                    <label class="form-check-label" for="pattern_amount">
+                                        Amount Escalation
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="merchant_cycling" id="pattern_merchant" checked>
+                                    <label class="form-check-label" for="pattern_merchant">
+                                        Merchant Cycling
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="mixed_patterns" id="pattern_mixed">
+                                    <label class="form-check-label" for="pattern_mixed">
+                                        Mixed Patterns
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary" id="startBtn">
+                                    <i class="fas fa-play"></i> Start Simulation
+                                </button>
+                                <button type="button" class="btn btn-danger" id="stopBtn" disabled>
+                                    <i class="fas fa-stop"></i> Stop Simulation
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="clearBtn">
+                                    <i class="fas fa-trash"></i> Clear Data
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <!-- Progress Bar -->
+                        <div class="mt-4" id="progressContainer" style="display: none;">
+                            <label class="form-label">Simulation Progress</label>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="progressBar">
+                                    <span id="progressText">0%</span>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-6">
+                                    <small class="text-muted" id="statusText">Ready to start</small>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock"></i> 
+                                        <span id="elapsedTime">00:00:00</span>
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- Running Indicator -->
+                            <div class="mt-2" id="runningIndicator" style="display: none;">
+                                <div class="d-flex align-items-center">
+                                    <div class="spinner-border spinner-border-sm text-success me-2" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <span class="text-success fw-bold">
+                                        <i class="fas fa-play-circle"></i> Simulation Running
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Results Panel -->
+            <div class="col-lg-8">
+                <!-- Statistics Overview -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-chart-line"></i> Simulation Overview</h5>
+                        <div id="liveStatus" style="display: none;">
+                            <span class="badge bg-success fs-6">
+                                <i class="fas fa-circle" id="liveIndicator"></i> LIVE
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="statsContainer">
+                            <div class="col-md-3">
+                                <div class="stat-card simulation-stats">
+                                    <div class="stat-number" id="totalTransactions">0</div>
+                                    <div class="stat-label">Total Transactions</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card simulation-stats">
+                                    <div class="stat-number" id="fraudTransactions">0</div>
+                                    <div class="stat-label">Fraud Transactions</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card simulation-stats">
+                                    <div class="stat-number" id="fraudRate">0%</div>
+                                    <div class="stat-label">Fraud Rate</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card simulation-stats">
+                                    <div class="stat-number" id="totalAmount">$0</div>
+                                    <div class="stat-label">Total Amount</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Detailed Report Tables -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-table"></i> Detailed Analysis</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-tabs" id="reportTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button" role="tab">
+                                    Recent Transactions
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="patterns-tab" data-bs-toggle="tab" data-bs-target="#patterns" type="button" role="tab">
+                                    Fraud Patterns
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="locations-tab" data-bs-toggle="tab" data-bs-target="#locations" type="button" role="tab">
+                                    Locations
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab">
+                                    Payment Methods
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content mt-3" id="reportTabContent">
+                            <div class="tab-pane fade show active" id="patterns" role="tabpanel">
+                                <div class="table-responsive">
+                                    <table class="table table-striped" id="patternsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Pattern</th>
+                                                <th>Count</th>
+                                                <th>Total Amount</th>
+                                                <th>Avg Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-pane fade" id="locations" role="tabpanel">
+                                <div class="table-responsive">
+                                    <table class="table table-striped" id="locationsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Location</th>
+                                                <th>Total Transactions</th>
+                                                <th>Fraud Transactions</th>
+                                                <th>Fraud Rate</th>
+                                                <th>Total Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-pane fade" id="payments" role="tabpanel">
+                                <div class="table-responsive">
+                                    <table class="table table-striped" id="paymentsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Payment Method</th>
+                                                <th>Total Transactions</th>
+                                                <th>Fraud Transactions</th>
+                                                <th>Fraud Rate</th>
+                                                <th>Total Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-pane fade" id="transactions" role="tabpanel">
+                                <!-- Transaction Filters -->
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="typeFilter" class="form-label">Filter by Type</label>
+                                        <select class="form-select" id="typeFilter">
+                                            <option value="">Types</option>
+                                            <option value="normal">Normal</option>
+                                            <option value="merchant_cycling">Merchant Cycling</option>
+                                            <option value="rapid_fire">Rapid Fire</option>
+                                            <option value="geographic_hopping">Geographic Hopping</option>
+                                            <option value="device_spoofing">Device Spoofing</option>
+                                            <option value="amount_escalation">Amount Escalation</option>
+                                            <option value="mixed_patterns">Mixed Patterns</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="paymentFilter" class="form-label">Filter by Payment Method</label>
+                                        <select class="form-select" id="paymentFilter">
+                                            <option value="">All Payment Methods</option>
+                                            <option value="credit_card">Credit Card</option>
+                                            <option value="debit_card">Debit Card</option>
+                                            <option value="digital_wallet">Digital Wallet</option>
+                                            <option value="mobile_money">Mobile Money</option>
+                                            <option value="bank_transfer">Bank Transfer</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="searchFilter" class="form-label">Search Transactions</label>
+                                        <input type="text" class="form-control" id="searchFilter" placeholder="Search by location, risk score, or amount...">
+                                    </div>
+                                </div>
+                                
+                                <!-- Transaction Count Display -->
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <small class="text-muted">
+                                            Showing <span id="filteredCount">0</span> of <span id="totalCount">0</span> transactions
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-striped" id="transactionsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>TransID</th>
+                                                <th>Amount</th>
+                                                <th>Currency</th>
+                                                <th>Location</th>
+                                                <th>Payment Method</th>
+                                                <th>Risk Score</th>
+                                                <th>Type</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                                
+                                <!-- Pagination Controls -->
+                                <div class="row mt-3">
+                                    <div class="col-12 d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <select class="form-select form-select-sm" id="pageSize" style="width: auto; display: inline-block;">
+                                                <option value="50">50 per page</option>
+                                                <option value="100" selected>100 per page</option>
+                                                <option value="250">250 per page</option>
+                                                <option value="500">500 per page</option>
+                                                <option value="all">Show All</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <nav>
+                                                <ul class="pagination pagination-sm mb-0" id="pagination">
+                                                    <!-- Pagination buttons will be generated by JavaScript -->
+                                                </ul>
+                                            </nav>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let simulationInterval;
+        let elapsedTimeInterval;
+        let isSimulationRunning = false;
+        let simulationStartTime = null;
+        
+        // Update fraud rate display
+        document.getElementById('fraud_rate').addEventListener('input', function() {
+            document.getElementById('fraud_rate_display').textContent = this.value + '%';
+        });
+        
+        // Form submission
+        document.getElementById('simulationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            startSimulation();
+        });
+        
+        let allTransactions = [];
+        let filteredTransactions = [];
+        let currentPage = 1;
+        let pageSize = 50;
+
+        function filterTransactions() {
+            console.log('Filtering transactions...');
+            console.log(allTransactions.length, 'total transactions');
+            const typeFilter = document.getElementById('typeFilter').value;
+            const paymentFilter = document.getElementById('paymentFilter').value;
+            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+            
+            filteredTransactions = allTransactions.filter(transaction => {
+                // Type filter
+                if (typeFilter === 'normal' && transaction.fraud_pattern) return false;
+                if (typeFilter && typeFilter !== 'normal' && transaction.fraud_pattern !== typeFilter) return false;
+                
+                // Payment method filter
+                if (paymentFilter && transaction.payment_method !== paymentFilter) return false;
+                
+                // Search filter
+                if (searchFilter) {
+                    const searchFields = [
+                        transaction.transaction_id,
+                        transaction.location.city,
+                        transaction.location.country,
+                        transaction.amount.toString(),
+                        transaction.currency,
+                        transaction.merchant_category,
+                        transaction.fraud_pattern || 'normal'
+                    ].join(' ').toLowerCase();
+                    
+                    if (!searchFields.includes(searchFilter)) return false;
+                }
+                
+                return true;
+            });
+            
+            currentPage = 1;
+            renderTransactionsTable();
+            updateTransactionCounts();
+        }
+
+        function renderTransactionsTable() {
+            const tbody = document.querySelector('#transactionsTable tbody');
+            tbody.innerHTML = '';
+            
+            if (filteredTransactions.length === 0) {
+                const row = tbody.insertRow();
+                row.innerHTML = '<td colspan="8" class="text-center text-muted">No transactions found</td>';
+                return;
+            }
+            
+            // Calculate pagination
+            let startIndex = 0;
+            let endIndex = filteredTransactions.length;
+            
+            if (pageSize > 0) {
+                startIndex = (currentPage - 1) * pageSize;
+                endIndex = Math.min(startIndex + pageSize, filteredTransactions.length);
+            }
+            
+            // Render transactions for current page
+            for (let i = startIndex; i < endIndex; i++) {
+                const transaction = filteredTransactions[i];
+                const row = tbody.insertRow();
+                
+                const typeSpan = transaction.fraud_pattern ? 
+                    `<span class="fraud-pattern">${transaction.fraud_pattern}</span>` :
+                    `<span class="normal-transaction">normal</span>`;
+                                
+                row.innerHTML = `
+                    <td title="${transaction.transaction_id}">${transaction.transaction_id.substring(0, 4)}...</td>
+                    <td>${transaction.amount.toFixed(2)}</td>
+                    <td>${transaction.currency}</td>
+                    <td>${transaction.location.city}, ${transaction.location.country}</td>
+                    <td>${transaction.payment_method.replace('_', ' ')}</td>
+                    <td>${transaction.risk_score?.toFixed(3) || 'N/A'}</td>
+                    <td>${typeSpan}</td>
+                `;
+            }
+            
+            renderPagination();
+        }
+
+        function updateTransactionCounts() {
+            document.getElementById('filteredCount').textContent = filteredTransactions.length.toLocaleString();
+            document.getElementById('totalCount').textContent = allTransactions.length.toLocaleString();
+        }
+                
+        
+        // Add event listeners for filters
+        document.getElementById('typeFilter').addEventListener('change', filterTransactions);
+        document.getElementById('paymentFilter').addEventListener('change', filterTransactions);
+        document.getElementById('searchFilter').addEventListener('input', filterTransactions);
+        document.getElementById('pageSize').addEventListener('change', function() {
+            pageSize = this.value === 'all' ? -1 : parseInt(this.value);
+            currentPage = 1;
+            renderTransactionsTable();
+        });
+        
+        function startSimulation() {
+            const formData = {
+                duration_hours: parseInt(document.getElementById('duration_hours').value),
+                transactions_per_hour: parseInt(document.getElementById('transactions_per_hour').value),
+                fraud_rate: parseFloat(document.getElementById('fraud_rate').value) / 100,
+                fraud_patterns: getSelectedPatterns()
+            };
+            
+            fetch('/run_simulation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                
+                isSimulationRunning = true;
+                simulationStartTime = new Date();
+                
+                // Update UI for running state
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                document.getElementById('progressContainer').style.display = 'block';
+                document.getElementById('runningIndicator').style.display = 'block';
+                document.getElementById('liveStatus').style.display = 'block';
+                document.getElementById('statusText').textContent = 'Simulation running...';
+                
+                // Add running class to stats container
+                document.getElementById('statsContainer').classList.add('simulation-running');
+                
+                // Start polling for progress
+                simulationInterval = setInterval(checkSimulationStatus, 1000);
+                
+                // Start elapsed time counter
+                elapsedTimeInterval = setInterval(updateElapsedTime, 1000);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error starting simulation');
+            });
+        }
+        
+        function updateElapsedTime() {
+            if (!simulationStartTime || !isSimulationRunning) return;
+            
+            const now = new Date();
+            const elapsed = Math.floor((now - simulationStartTime) / 1000);
+            
+            const hours = Math.floor(elapsed / 3600);
+            const minutes = Math.floor((elapsed % 3600) / 60);
+            const seconds = elapsed % 60;
+            
+            const timeString = 
+                String(hours).padStart(2, '0') + ':' +
+                String(minutes).padStart(2, '0') + ':' +
+                String(seconds).padStart(2, '0');
+            
+            document.getElementById('elapsedTime').textContent = timeString;
+        }
+        
+        function stopSimulation() {
+            fetch('/stop_simulation', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                stopSimulationUI();
+                document.getElementById('statusText').textContent = 'Simulation stopped';
+                
+                // Get final report
+                loadReport();
+            });
+        }
+        
+        function stopSimulationUI() {
+            isSimulationRunning = false;
+            simulationStartTime = null;
+            
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('runningIndicator').style.display = 'none';
+            document.getElementById('liveStatus').style.display = 'none';
+            
+            // Remove running class from stats container
+            document.getElementById('statsContainer').classList.remove('simulation-running');
+            
+            if (simulationInterval) {
+                clearInterval(simulationInterval);
+            }
+            
+            if (elapsedTimeInterval) {
+                clearInterval(elapsedTimeInterval);
+            }
+        }
+        
+        function clearData() {
+            fetch('/clear_data', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Stop any running simulation UI
+                stopSimulationUI();
+                
+                // Clear all displays
+                document.getElementById('totalTransactions').textContent = '0';
+                document.getElementById('fraudTransactions').textContent = '0';
+                document.getElementById('fraudRate').textContent = '0%';
+                document.getElementById('totalAmount').textContent = '$0';
+                
+                // Clear tables
+                clearTables();
+                
+                document.getElementById('progressBar').style.width = '0%';
+                document.getElementById('progressBar').classList.remove('progress-bar-striped', 'progress-bar-animated');
+                document.getElementById('progressText').textContent = '0%';
+                document.getElementById('statusText').textContent = 'Data cleared';
+                document.getElementById('elapsedTime').textContent = '00:00:00';
+                document.getElementById('progressContainer').style.display = 'none';
+            });
+        }
+        
+        function getSelectedPatterns() {
+            const patterns = [];
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+            checkboxes.forEach(checkbox => {
+                patterns.push(checkbox.value);
+            });
+            return patterns;
+        }
+        
+        function checkSimulationStatus() {
+            fetch('/simulation_status')
+            .then(response => response.json())
+            .then(data => {
+                const progress = Math.round(data.progress);
+                const progressBar = document.getElementById('progressBar');
+                
+                progressBar.style.width = progress + '%';
+                document.getElementById('progressText').textContent = progress + '%';
+                document.getElementById('statusText').textContent = 
+                    `Generated ${data.total_transactions.toLocaleString()} transactions`;
+                
+                // Add/remove animation based on running status
+                if (data.running) {
+                    progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+                } else {
+                    progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+                }
+                
+                if (!data.running && isSimulationRunning) {
+                    stopSimulationUI();
+                    document.getElementById('statusText').textContent = 'Simulation completed';
+                    
+                    // Load final report
+                    loadReport();
+                }
+            });
+        }
+        
+        function loadReport() {
+            fetch('/get_report')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error('Report error:', data.error);
+                    return;
+                }
+                
+                updateOverviewStats(data.summary);
+                updatePatternsTable(data.pattern_analysis);
+                updateLocationsTable(data.location_analysis);
+                updatePaymentsTable(data.payment_method_analysis);
+                updateTransactionsTable(data.transactions);
+                allTransactions = data.transactions || [];
+                filteredTransactions = allTransactions.slice(); // Start with all transactions
+                currentPage = 1; // Reset to first page
+            })
+            .catch(error => {
+                console.error('Error loading report:', error);
+            });
+        }
+        
+        function updateOverviewStats(summary) {
+            document.getElementById('totalTransactions').textContent = 
+                summary.total_transactions.toLocaleString();
+            document.getElementById('fraudTransactions').textContent = 
+                summary.fraudulent_transactions.toLocaleString();
+            document.getElementById('fraudRate').textContent = 
+                (summary.fraud_rate * 100).toFixed(1) + '%';
+            document.getElementById('totalAmount').textContent = 
+                summary.total_amount.toLocaleString();
+        }
+        
+        function updatePatternsTable(patternAnalysis) {
+            const tbody = document.querySelector('#patternsTable tbody');
+            tbody.innerHTML = '';
+            
+            const counts = patternAnalysis.counts || {};
+            const amounts = patternAnalysis.amounts || {};
+            
+            Object.keys(counts).forEach(pattern => {
+                const row = tbody.insertRow();
+                const avgAmount = counts[pattern] > 0 ? amounts[pattern] / counts[pattern] : 0;
+                
+                row.innerHTML = `
+                    <td><span class="fraud-pattern">${pattern.replace('_', ' ').toUpperCase()}</span></td>
+                    <td>${counts[pattern]}</td>
+                    <td>${amounts[pattern]?.toFixed(2) || '0.00'}</td>
+                    <td>${avgAmount.toFixed(2)}</td>
+                `;
+            });
+        }
+        
+        function updateLocationsTable(locationAnalysis) {
+            const tbody = document.querySelector('#locationsTable tbody');
+            tbody.innerHTML = '';
+            
+            Object.entries(locationAnalysis).forEach(([location, stats]) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${location}</td>
+                    <td>${stats.total_transactions}</td>
+                    <td>${stats.fraud_transactions}</td>
+                    <td>${(stats.fraud_rate * 100).toFixed(1)}%</td>
+                    <td>${stats.total_amount.toFixed(2)}</td>
+                `;
+            });
+        }
+        
+        function updatePaymentsTable(paymentAnalysis) {
+            const tbody = document.querySelector('#paymentsTable tbody');
+            tbody.innerHTML = '';
+            
+            Object.entries(paymentAnalysis).forEach(([method, stats]) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${method.replace('_', ' ').toUpperCase()}</td>
+                    <td>${stats.total_transactions}</td>
+                    <td>${stats.fraud_transactions}</td>
+                    <td>${(stats.fraud_rate * 100).toFixed(1)}%</td>
+                    <td>${stats.total_amount.toFixed(2)}</td>
+                `;
+            });
+        }
+        
+        function updateTransactionsTable(transactions) {
+            const tbody = document.querySelector('#transactionsTable tbody');
+            tbody.innerHTML = '';
+            
+            transactions.slice(-50).forEach(transaction => {
+                const row = tbody.insertRow();
+                const typeSpan = transaction.fraud_pattern ? 
+                    `<span class="fraud-pattern">${transaction.fraud_pattern}</span>` :
+                    `<span class="normal-transaction">normal</span>`;
+                
+                row.innerHTML = `
+                    <td title="${transaction.transaction_id}">${transaction.transaction_id.substring(0, 4)}...</td>
+                    <td>${transaction.amount.toFixed(2)}</td>
+                    <td>${transaction.currency}</td>
+                    <td>${transaction.location.city}, ${transaction.location.country}</td>
+                    <td>${transaction.payment_method.replace('_', ' ')}</td>
+                    <td>${transaction.risk_score?.toFixed(3) || 'N/A'}</td>
+                    <td>${typeSpan}</td>
+                `;
+            });
+        }
+        
+        function clearTables() {
+            document.querySelector('#patternsTable tbody').innerHTML = '';
+            document.querySelector('#locationsTable tbody').innerHTML = '';
+            document.querySelector('#paymentsTable tbody').innerHTML = '';
+            document.querySelector('#transactionsTable tbody').innerHTML = '';
+            
+            // Clear transaction data and filters
+            allTransactions = [];
+            filteredTransactions = [];
+            currentPage = 1;
+            updateTransactionCounts();
+            
+            // Reset filters
+            document.getElementById('typeFilter').value = '';
+            document.getElementById('paymentFilter').value = '';
+            document.getElementById('searchFilter').value = '';
+            document.getElementById('pagination').innerHTML = '';
+        }
+        
+        // Auto-refresh report every 5 seconds during simulation
+        setInterval(() => {
+            if (isSimulationRunning) {
+                loadReport();
+            }
+        }, 5000);
+        
+        // Load initial empty report
+        loadReport();
+    </script>
+</body>
+</html>
