@@ -126,7 +126,7 @@
         }
         
         .stat-number {
-            font-size: 2.5em;
+            font-size: 1.5em;
             font-weight: bold;
             color: #00b894;
         }
@@ -187,12 +187,12 @@
                     <div class="card-body">
                         <form id="simulationForm">
                             <div class="mb-3">
-                                <label for="duration_hours" class="form-label">Duration (Hours)</label>
+                                <label for="duration_hours" class="form-label">Duration Hours (Max:24)</label>
                                 <input type="number" class="form-control" id="duration_hours" value="1" min="1" max="24">
                             </div>
                             
                             <div class="mb-3">
-                                <label for="transactions_per_hour" class="form-label">Transactions per Hour</label>
+                                <label for="transactions_per_hour" class="form-label">Transactions per Hour (Max:1000)</label>
                                 <input type="number" class="form-control" id="transactions_per_hour" value="100" min="10" max="1000">
                             </div>
                             
@@ -301,7 +301,7 @@
                         <h5 class="mb-0"><i class="fas fa-chart-line"></i> Simulation Overview</h5>
                         <div id="liveStatus" style="display: none;">
                             <span class="badge bg-success fs-6">
-                                <i class="fas fa-circle" id="liveIndicator"></i> LIVE
+                                <i class="fas fa-circle" id="liveIndicator"></i> running
                             </span>
                         </div>
                     </div>
@@ -343,12 +343,12 @@
                     <div class="card-body">
                         <ul class="nav nav-tabs" id="reportTabs" role="tablist">
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button" role="tab">
+                                <button class="nav-link active" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button" role="tab">
                                     Transactions
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="patterns-tab" data-bs-toggle="tab" data-bs-target="#patterns" type="button" role="tab">
+                                <button class="nav-link" id="patterns-tab" data-bs-toggle="tab" data-bs-target="#patterns" type="button" role="tab">
                                     Fraud Patterns
                                 </button>
                             </li>
@@ -520,6 +520,18 @@
             e.preventDefault();
             startSimulation();
         });
+
+        document.getElementById('stopBtn').addEventListener('click', function(e) {
+            // e.preventDefault();
+            if (!confirm('Are you sure you want to stop the simulation?')) return;
+            stopSimulation();
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', function(e) {
+            // e.preventDefault();
+            if (!confirm('Are you sure you want to clear all data?')) return;
+            clearData();
+        });
         
         let allTransactions = [];
         let filteredTransactions = [];
@@ -593,7 +605,7 @@
                     `<span class="normal-transaction">normal</span>`;
                                 
                 row.innerHTML = `
-                    <td title="${transaction.transaction_id}">${transaction.transaction_id.substring(0, 4)}...</td>
+                    <td title="${transaction.transaction_id}">${transaction.transaction_id.substring(0, 6)}...</td>
                     <td>${transaction.amount.toFixed(2)}</td>
                     <td>${transaction.currency}</td>
                     <td>${transaction.location.city}, ${transaction.location.country}</td>
@@ -724,6 +736,7 @@
         }
         
         function clearData() {
+            console.log('Clearing all data...');
             fetch('/clear_data', {
                 method: 'POST'
             })
@@ -885,7 +898,7 @@
                     `<span class="normal-transaction">normal</span>`;
                 
                 row.innerHTML = `
-                    <td title="${transaction.transaction_id}">${transaction.transaction_id.substring(0, 4)}...</td>
+                    <td title="${transaction.transaction_id}">${transaction.transaction_id.substring(0, 6)}...</td>
                     <td>${transaction.amount.toFixed(2)}</td>
                     <td>${transaction.currency}</td>
                     <td>${transaction.location.city}, ${transaction.location.country}</td>
